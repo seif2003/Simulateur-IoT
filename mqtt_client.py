@@ -6,6 +6,7 @@ Encapsule la logique de communication avec le broker MQTT.
 import json
 import time
 import logging
+import uuid
 from typing import Dict, Any, Optional
 import paho.mqtt.client as mqtt
 
@@ -28,7 +29,7 @@ class MQTTClient:
         self,
         broker_host: str = "localhost",
         broker_port: int = 1883,
-        client_id: str = "iot_simulator",
+        client_id: Optional[str] = None,
         keepalive: int = 60
     ):
         """
@@ -37,17 +38,24 @@ class MQTTClient:
         Args:
             broker_host: Adresse du broker MQTT
             broker_port: Port du broker MQTT
-            client_id: Identifiant unique du client
+            client_id: Identifiant unique du client (généré automatiquement si None)
             keepalive: Intervalle de keepalive en secondes
         """
         self.broker_host = broker_host
         self.broker_port = broker_port
-        self.client_id = client_id
+        self.client_id = client_id or f"iot_sim_{uuid.uuid4().hex[:8]}"
         self.keepalive = keepalive
         self.connected = False
         
-        # Création du client MQTT
-        self.client = mqtt.Client(client_id=self.client_id)
+        # Création du client MQTT avec protocole explicite MQTT v3.1.1
+        self.client = mqtt.Client(
+            client_id=self.client_id,
+            protocol=mqtt.MQTTv311,
+            clean_session=True,
+            transport="tcp"
+        )
+        
+        logger.info(f"Client MQTT créé avec ID: {self.client_id}")
         
         # Configuration des callbacks
         self.client.on_connect = self._on_connect
@@ -69,7 +77,15 @@ class MQTTClient:
             logger.info(f"✓ Connecté au broker MQTT {self.broker_host}:{self.broker_port}")
         else:
             self.connected = False
-            logger.error(f"✗ Échec de connexion au broker. Code: {rc}")
+            error_messages = {
+                1: "Protocole MQTT incorrect",
+                2: "Client ID rejeté",
+                3: "Serveur MQTT indisponible",
+                4: "Mauvais nom d'utilisateur/mot de passe",
+                5: "Non autorisé"
+            }
+            error_msg = error_messages.get(rc, f"Code erreur inconnu: {rc}")
+            logger.error(f"✗ Échec de connexion au broker: {error_msg}")
     
     def _on_disconnect(self, client, userdata, rc):
         """
