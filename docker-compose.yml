@@ -34,9 +34,20 @@ services:
     restart: unless-stopped
     networks:
       - iot_network
+      - dokploy-network
     volumes:
       - ./templates:/app/templates
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.iot-simulator.rule=Host(`iot.benamara.tn`)"
+      - "traefik.http.routers.iot-simulator.entrypoints=websecure"
+      - "traefik.http.routers.iot-simulator.tls=true"
+      - "traefik.http.routers.iot-simulator.tls.certresolver=letsencrypt"
+      - "traefik.http.services.iot-simulator.loadbalancer.server.port=5000"
+      - "traefik.docker.network=dokploy-network"
 
 networks:
   iot_network:
     driver: bridge
+  dokploy-network:
+    external: true
