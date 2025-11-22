@@ -5,8 +5,8 @@ services:
     image: eclipse-mosquitto:latest
     container_name: mqtt_broker
     ports:
-      - "1883:1883"      # Port MQTT non sécurisé
-      - "9001:9001"      # Port WebSocket (optionnel)
+      - "1883:1883"      # Port MQTT
+      - "9001:9001"      # Port WebSocket
     volumes:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
@@ -14,6 +14,28 @@ services:
     restart: unless-stopped
     networks:
       - iot_network
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build: .
+    container_name: iot_simulator_web
+    ports:
+      - "5000:5000"
+    environment:
+      - BROKER_HOST=mosquitto
+      - BROKER_PORT=1883
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - iot_network
+    volumes:
+      - ./templates:/app/templates
 
 networks:
   iot_network:

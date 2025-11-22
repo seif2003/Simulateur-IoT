@@ -82,17 +82,21 @@ def init_mqtt():
     """Initialise le client MQTT."""
     global mqtt_client
     
+    import os
+    broker_host = os.getenv('BROKER_HOST', 'localhost')
+    broker_port = int(os.getenv('BROKER_PORT', '1883'))
+    
     mqtt_client = MQTTClient(
-        broker_host="localhost",
-        broker_port=1883,
+        broker_host=broker_host,
+        broker_port=broker_port,
         client_id="iot_simulator_web"
     )
     
     if mqtt_client.connect(timeout=10):
-        logger.info("✓ Connecté au broker MQTT")
+        logger.info(f"✓ Connecté au broker MQTT ({broker_host}:{broker_port})")
         return True
     else:
-        logger.error("✗ Échec de connexion au broker MQTT")
+        logger.error(f"✗ Échec de connexion au broker MQTT ({broker_host}:{broker_port})")
         return False
 
 
@@ -310,12 +314,16 @@ def handle_disconnect():
 
 
 if __name__ == '__main__':
+    import os
+    host = os.getenv('HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', '5000'))
+    
     logger.info("=" * 60)
     logger.info("INTERFACE WEB IoT - Démarrage")
     logger.info("=" * 60)
-    logger.info("Accédez à l'interface sur: http://localhost:5000")
-    logger.info("Contrôles: http://localhost:5000/control")
-    logger.info("Dashboard: http://localhost:5000/dashboard")
+    logger.info(f"Accédez à l'interface sur: http://{host}:{port}")
+    logger.info(f"Contrôles: http://{host}:{port}/control")
+    logger.info(f"Dashboard: http://{host}:{port}/dashboard")
     logger.info("=" * 60)
     
-    socketio.run(app, host='127.0.0.1', port=5000, debug=False)
+    socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)

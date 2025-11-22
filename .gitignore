@@ -29,6 +29,9 @@ wheels/
 mosquitto/data/
 mosquitto/log/
 
+# Docker
+.env
+
 # IDE
 .vscode/
 .idea/

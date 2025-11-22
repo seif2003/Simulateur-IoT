@@ -35,25 +35,64 @@ Ce projet simule un environnement IoT avec trois types de capteurs (température
 
 ### Prérequis
 - Docker & Docker Compose
-- Python 3.7+
-- pip
+- (Optionnel) Python 3.7+ pour développement local
 
-### 1️⃣ Installer les dépendances
+### Méthode 1 : Docker (Recommandé pour Production) 🐳
+
+**Démarrage rapide avec script :**
+```bash
+# Linux/Mac
+chmod +x start.sh
+./start.sh
+
+# Windows
+start.bat
+```
+
+**Ou manuellement :**
+```bash
+# Développement
+docker-compose up --build
+
+# Production (port 80)
+docker-compose -f docker-compose.prod.yml up --build -d
+```
+
+**Accès :**
+- Interface : **http://localhost:5000** (dev) ou **http://localhost** (prod)
+- Contrôles : `/control`
+- Dashboard : `/dashboard/<session_id>`
+
+**Gestion :**
+```bash
+# Voir les logs
+docker-compose logs -f
+
+# Arrêter
+docker-compose down
+
+# Rebuild après modifications
+docker-compose up --build
+```
+
+### Méthode 2 : Installation Locale (Développement)
+
+**1️⃣ Installer les dépendances**
 ```powershell
 pip install -r requirements.txt
 ```
 
-### 2️⃣ Démarrer le broker MQTT
+**2️⃣ Démarrer le broker MQTT**
 ```powershell
-docker-compose up -d
+docker-compose up -d mosquitto
 ```
 
-### 3️⃣ Lancer l'interface web
+**3️⃣ Lancer l'interface web**
 ```powershell
 python app.py
 ```
 
-### 4️⃣ Accéder à l'interface
+**4️⃣ Accéder à l'interface**
 Ouvrez : **http://localhost:5000**
 
 ## 🗂️ Architecture du Projet
@@ -217,43 +256,110 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 1883
 ```
 
-## 🐳 Gestion Docker
+## 🐳 Gestion Docker Complète
 
-```powershell
-# Démarrer
+### Commandes de Base
+
+```bash
+# Démarrer tous les services
 docker-compose up -d
 
-# Arrêter
-docker-compose down
+# Démarrer avec rebuild
+docker-compose up --build -d
 
-# Logs
+# Voir les logs
+docker-compose logs -f
+
+# Logs d'un service spécifique
+docker-compose logs -f web
 docker-compose logs -f mosquitto
 
-# Redémarrer
-docker-compose restart
+# Arrêter tous les services
+docker-compose down
+
+# Arrêter et supprimer volumes
+docker-compose down -v
+
+# Redémarrer un service
+docker-compose restart web
+docker-compose restart mosquitto
+
+# Voir l'état des services
+docker-compose ps
+
+# Exécuter une commande dans un conteneur
+docker-compose exec web python -c "print('Hello')"
+```
+
+### Déploiement Production
+
+**Configuration Production :**
+```bash
+# Démarrer en mode production (port 80)
+docker-compose -f docker-compose.prod.yml up -d
+
+# Voir les logs en production
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Arrêter production
+docker-compose -f docker-compose.prod.yml down
+```
+
+**Variables d'environnement :**
+Créer un fichier `.env` :
+```env
+BROKER_HOST=mosquitto
+BROKER_PORT=1883
+HOST=0.0.0.0
+PORT=5000
+```
+
+### Architecture Docker
+
+```
+┌─────────────────────────────────────┐
+│         Docker Network              │
+│         (iot_network)               │
+│                                     │
+│  ┌──────────────┐  ┌─────────────┐ │
+│  │   Mosquitto  │  │  Flask Web  │ │
+│  │   (MQTT)     │  │    App      │ │
+│  │              │  │             │ │
+│  │ Port 1883    │◄─┤ Port 5000   │ │
+│  │ Port 9001    │  │             │ │
+│  └──────────────┘  └─────────────┘ │
+│         ▲                  ▲        │
+└─────────┼──────────────────┼────────┘
+          │                  │
+    External Access    External Access
 ```
 
 ## 📁 Structure du Projet
 
 ```
 proj-ds/
-├── app.py                  # Application Flask + SocketIO + Routes
-├── sensors.py              # Classes TemperatureSensor, HumiditySensor, GPSSensor
-├── mqtt_client.py          # Wrapper client MQTT avec reconnexion
-├── requirements.txt        # Dépendances Python
-├── docker-compose.yml      # Configuration Mosquitto
-├── README.md              # Documentation complète
-├── .gitignore             # Fichiers à ignorer
+├── app.py                     # Application Flask + SocketIO + Routes
+├── sensors.py                 # Classes TemperatureSensor, HumiditySensor, GPSSensor
+├── mqtt_client.py             # Wrapper client MQTT avec reconnexion
+├── requirements.txt           # Dépendances Python
+├── Dockerfile                 # Image Docker pour l'app Flask
+├── docker-compose.yml         # Configuration dev (port 5000)
+├── docker-compose.prod.yml    # Configuration production (port 80)
+├── start.sh                   # Script de démarrage Linux/Mac
+├── start.bat                  # Script de démarrage Windows
+├── .env.example               # Exemple de variables d'environnement
+├── README.md                  # Documentation complète
+├── .gitignore                 # Fichiers à ignorer
 ├── templates/
-│   ├── index.html         # Page d'accueil (2 cards)
-│   ├── control.html       # Interface principale (contrôles + dashboard intégré)
-│   ├── dashboard.html     # Dashboard standalone (accès via session_id)
-│   └── scanner.html       # Scanner QR + saisie manuelle
+│   ├── index.html            # Page d'accueil (2 cards)
+│   ├── control.html          # Interface principale (contrôles + dashboard intégré)
+│   ├── dashboard.html        # Dashboard standalone (accès via session_id)
+│   └── scanner.html          # Scanner QR + saisie manuelle
 └── mosquitto/
     ├── config/
-    │   └── mosquitto.conf # Configuration broker
-    ├── data/              # Persistence MQTT
-    └── log/               # Logs broker
+    │   └── mosquitto.conf    # Configuration broker
+    ├── data/                 # Persistence MQTT (ignoré par git)
+    └── log/                  # Logs broker (ignoré par git)
 ```
 
 ## 🎨 Design System
@@ -434,38 +540,208 @@ log_dest file /mosquitto/log/mosquitto.log
 
 ## 🐛 Troubleshooting
 
-### Le serveur Flask ne démarre pas
+### Docker : Les conteneurs ne démarrent pas
+```bash
+# Vérifier l'état des services
+docker-compose ps
+
+# Voir les logs complets
+docker-compose logs
+
+# Vérifier les ports occupés
+netstat -ano | findstr :5000
+netstat -ano | findstr :1883
+
+# Rebuild complet
+docker-compose down -v
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### Docker : Le serveur Flask ne démarre pas
+```bash
+# Voir les logs du conteneur web
+docker-compose logs web
+
+# Vérifier les dépendances
+docker-compose exec web pip list
+
+# Rebuild l'image
+docker-compose build web
+docker-compose up web
+```
+
+### Docker : Mosquitto ne démarre pas
+```bash
+# Vérifier les logs
+docker-compose logs mosquitto
+
+# Vérifier la configuration
+docker-compose exec mosquitto cat /mosquitto/config/mosquitto.conf
+
+# Restart le service
+docker-compose restart mosquitto
+
+# Recréer avec volumes propres
+docker-compose down -v
+docker-compose up -d
+```
+
+### Docker : Erreur de connexion entre services
+```bash
+# Vérifier le réseau Docker
+docker network ls
+docker network inspect proj-ds_iot_network
+
+# Tester la connectivité
+docker-compose exec web ping mosquitto
+
+# Vérifier les variables d'environnement
+docker-compose exec web env | grep BROKER
+```
+
+### Local : Le serveur Flask ne démarre pas
 ```powershell
 # Vérifier les dépendances
 pip install -r requirements.txt
 
 # Vérifier le port 5000
 netstat -ano | findstr :5000
-```
 
-### Mosquitto ne démarre pas
-```powershell
-# Vérifier Docker
-docker ps
-
-# Logs Mosquitto
-docker-compose logs mosquitto
-
-# Recréer les volumes
-docker-compose down -v
-docker-compose up -d
+# Vérifier les variables d'environnement
+echo %BROKER_HOST%
 ```
 
 ### Dashboard ne reçoit pas de données
 1. Vérifier que la simulation est **démarrée** (bouton vert)
 2. Vérifier connexion WebSocket (🟢 Connecté)
-3. Ouvrir console navigateur (F12) pour erreurs
-4. Vérifier que Mosquitto tourne : `docker ps`
+3. Ouvrir console navigateur (F12) pour erreurs JavaScript
+4. **Docker** : `docker-compose ps` pour vérifier que tous les services sont "Up"
+5. **Docker** : `docker-compose logs -f web` pour voir les logs en temps réel
 
-### QR Code ne fonctionne pas
-1. Vérifier que `qrcode` et `pillow` sont installés
-2. Vérifier URL dans le QR : doit contenir `session_id`
-3. S'assurer que le mobile peut accéder à `localhost:5000` (même réseau ou ngrok)
+### QR Code ne fonctionne pas sur mobile
+1. **Docker** : Remplacer `localhost` par l'**IP de votre serveur**
+   ```python
+   # Dans app.py, modifier la génération du QR code
+   dashboard_url = f"http://YOUR_SERVER_IP:5000/dashboard/{session_id}"
+   ```
+2. S'assurer que le pare-feu autorise le port 5000
+3. Vérifier que mobile et serveur sont sur le même réseau
+4. **Alternative** : Utiliser **ngrok** pour exposer le serveur
+   ```bash
+   ngrok http 5000
+   ```
+
+### Volumes Docker : Problèmes de permissions
+```bash
+# Linux/Mac - Ajuster les permissions
+sudo chown -R $USER:$USER mosquitto/data mosquitto/log
+
+# Ou utiliser des volumes Docker nommés (voir docker-compose.prod.yml)
+docker volume ls
+docker volume inspect proj-ds_mosquitto_data
+```
+
+## 🚀 Déploiement en Production
+
+### Prérequis Serveur
+- Serveur Linux avec Docker & Docker Compose installés
+- Nom de domaine (optionnel mais recommandé)
+- Certificats SSL si HTTPS requis
+
+### Étapes de Déploiement
+
+**1. Cloner le projet sur le serveur**
+```bash
+git clone https://github.com/seif2003/Simulateur-IoT.git
+cd Simulateur-IoT
+```
+
+**2. Configurer les variables d'environnement**
+```bash
+cp .env.example .env
+nano .env
+```
+
+Modifier l'URL du QR code dans `app.py` :
+```python
+# Remplacer localhost par votre domaine/IP
+dashboard_url = f"http://YOUR_DOMAIN_OR_IP/dashboard/{session_id}"
+```
+
+**3. Démarrer en mode production**
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**4. Vérifier le déploiement**
+```bash
+docker-compose ps
+docker-compose logs -f
+curl http://localhost/api/status
+```
+
+### Reverse Proxy avec Nginx (Recommandé)
+
+**Configuration Nginx pour HTTPS :**
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Monitoring & Logs
+
+**Voir les logs en temps réel :**
+```bash
+docker-compose logs -f web
+docker-compose logs -f mosquitto
+```
+
+**Sauvegarder les logs :**
+```bash
+docker-compose logs > logs_$(date +%Y%m%d).txt
+```
+
+**Monitoring des ressources :**
+```bash
+docker stats
+```
+
+### Backup & Restauration
+
+**Backup des données MQTT :**
+```bash
+tar -czf mosquitto_backup_$(date +%Y%m%d).tar.gz mosquitto/data/
+```
+
+**Restauration :**
+```bash
+docker-compose down
+tar -xzf mosquitto_backup_20250122.tar.gz
+docker-compose up -d
+```
 
 ## 🔐 Sécurité & Limitations
 
@@ -474,19 +750,22 @@ Ce projet est conçu pour l'apprentissage et le développement. **Ne pas utilise
 
 - ✅ **Authentification MQTT** (username/password)
 - ✅ **TLS/SSL** sur MQTT et Flask
-- ✅ **HTTPS** pour l'interface web
-- ✅ **Rate limiting** sur les API
+- ✅ **HTTPS** pour l'interface web (via Nginx + Let's Encrypt)
+- ✅ **Rate limiting** sur les API (via Nginx ou Flask-Limiter)
 - ✅ **Validation des entrées** utilisateur
-- ✅ **Expiration des sessions** (TTL)
-- ✅ **CORS restrictif** (whitelist domains)
+- ✅ **Expiration des sessions** (TTL avec Redis)
+- ✅ **CORS restrictif** (whitelist domains uniquement)
 - ✅ **Sanitization** des données MQTT
+- ✅ **Pare-feu** configuré (ports 80, 443, 1883 uniquement)
+- ✅ **Monitoring** (Prometheus + Grafana)
 
 ### Limitations Actuelles
-- Sessions en mémoire (perdues au redémarrage)
+- Sessions en mémoire (perdues au redémarrage du conteneur)
 - Pas d'authentification utilisateur
 - Un seul simulateur par instance
-- Pas de persistence historique
-- Allow anonymous sur MQTT
+- Pas de persistence historique des données
+- Allow anonymous sur MQTT (dev uniquement)
+- QR codes avec localhost (à modifier pour production)
 
 ## 📚 Ressources & Documentation
 
