@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrôle des Capteurs - Simulateur IoT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #09090b;
+            min-height: 100vh;
+            padding: 20px;
+            color: #fafafa;
+        }
+        
+        .navbar {
+            background: #18181b;
+            border: 1px solid #27272a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar h1 {
+            color: #fafafa;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        
+        .nav-links a {
+            color: #a1a1aa;
+            text-decoration: none;
+            margin-left: 20px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            color: #e7000b;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .control-panel {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .qr-section {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .qr-section h2 {
+            color: #fafafa;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .qr-card {
+            background: #e7000b;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            border: none;
+        }
+        
+        .qr-card h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        
+        .qr-card img {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .qr-card p {
+            color: white;
+            font-size: 1em;
+            margin-top: 15px;
+            opacity: 0.95;
+        }
+        
+        .session-info {
+            background: #18181b;
+            border: 1px solid #e7000b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .session-info p {
+            margin: 5px 0;
+            color: #e4e4e7;
+        }
+        
+        .session-info strong {
+            color: #e7000b;
+        }
+        
+        .copy-btn {
+            background: #e7000b;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875em;
+            margin-left: 10px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: #c00009;
+        }
+        
+        .simulation-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+        
+        .btn-start {
+            background: #e7000b;
+        }
+        
+        .btn-start:hover {
+            background: #c00009;
+        }
+        
+        .btn-stop {
+            background: #27272a;
+            border: 1px solid #3f3f46;
+        }
+        
+        .btn-stop:hover {
+            background: #3f3f46;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875em;
+            margin-left: 15px;
+        }
+        
+        .status.running {
+            background: #16a34a;
+            color: white;
+        }
+        
+        .status.stopped {
+            background: #27272a;
+            color: #a1a1aa;
+        }
+        
+        .sensor-card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .sensor-title {
+            font-size: 1.25em;
+            color: #fafafa;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+        
+        .sensor-icon {
+            font-size: 1.5em;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #27272a;
+            transition: 0.2s;
+            border-radius: 30px;
+            border: 1px solid #3f3f46;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 3px;
+            background-color: #71717a;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background: #e7000b;
+            border-color: #e7000b;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+            background-color: white;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e4e4e7;
+            font-weight: 500;
+            font-size: 0.875em;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 5px;
+            background: #27272a;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border: 1px solid #3f3f46;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e7000b;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e7000b;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            min-width: 80px;
+            text-align: right;
+            font-weight: 600;
+            color: #e7000b;
+            font-size: 1em;
+        }
+        
+        .interval-control {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        input[type="number"] {
+            padding: 10px;
+            background: #09090b;
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            font-size: 1em;
+            width: 100px;
+            color: #fafafa;
+        }
+        
+        .current-value {
+            background: #09090b;
+            border: 1px solid #27272a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .current-value p {
+            margin: 5px 0;
+            color: #e4e4e7;
+            font-size: 0.875em;
+        }
+        
+        .current-value strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <h1>🎛️ Contrôle des Capteurs IoT</h1>
+            <div class="nav-links">
+                <a href="/">🏠 Accueil</a>
+                <a href="/dashboard">📊 Dashboard</a>
+                <a href="/scanner">📱 Scanner</a>
+            </div>
+        </div>
+        
+        <div class="qr-section">
+            <h2>📱 QR Code d'Accès Rapide</h2>
+            <div class="session-info">
+                <p><strong>ID de Session:</strong> <span id="sessionId">Chargement...</span>
+                    <button class="copy-btn" onclick="copySessionId()">📋 Copier</button>
+                </p>
+                <p>Scannez le QR code pour accéder au dashboard complet avec tous les capteurs</p>
+            </div>
+            
+            <div style="display: flex; justify-content: center; margin-top: 20px;">
+                <div class="qr-card" style="max-width: 300px;">
+                    <h3>📊 Dashboard Complet</h3>
+                    <img id="qr-dashboard" src="/api/qrcode" alt="QR Dashboard" style="width: 200px; height: 200px;">
+                    <p>Température + Humidité + GPS</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="simulation-controls">
+                <button id="startBtn" class="btn btn-start" onclick="startSimulation()">▶️ Démarrer</button>
+                <button id="stopBtn" class="btn btn-stop" onclick="stopSimulation()" disabled>⏹️ Arrêter</button>
+                <span id="status" class="status stopped">Arrêté</span>
+            </div>
+            
+            <div class="interval-control">
+                <label>⏱️ Intervalle de publication (secondes):</label>
+                <div class="slider-container">
+                    <input type="range" id="intervalSlider" min="0.1" max="10" step="0.1" value="1.0" oninput="updateInterval(this.value)">
+                    <span class="value-display" id="intervalValue">1.0 s</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Capteur de Température -->
+        <div class="sensor-card">
+            <div class="sensor-header">
+                <div class="sensor-title">
+                    <span class="sensor-icon">🌡️</span>
+                    Capteur de Température
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="tempEnabled" checked onchange="toggleSensor('temperature', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="control-group">
+                <label>Température de base (°C):</label>
+                <div class="slider-container">
+                    <input type="range" id="baseTemp" min="0" max="50" step="0.5" value="22" oninput="updateTempBase(this.value)">
+                    <span class="value-display" id="baseTempValue">22.0 °C</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Amplitude du bruit (±°C):</label>
+                <div class="slider-container">
+                    <input type="range" id="noiseRange" min="0" max="5" step="0.1" value="2.5" oninput="updateTempNoise(this.value)">
+                    <span class="value-display" id="noiseRangeValue">2.5 °C</span>
+                </div>
+            </div>
+            
+            <div class="current-value">
+                <p><strong>Plage:</strong> <span id="tempRange">19.5°C - 24.5°C</span></p>
+            </div>
+        </div>
+        
+        <!-- Capteur d'Humidité -->
+        <div class="sensor-card">
+            <div class="sensor-header">
+                <div class="sensor-title">
+                    <span class="sensor-icon">💧</span>
+                    Capteur d'Humidité
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="humEnabled" checked onchange="toggleSensor('humidity', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="control-group">
+                <label>Humidité initiale (%):</label>
+                <div class="slider-container">
+                    <input type="range" id="initialHumidity" min="20" max="80" step="1" value="55" oninput="updateHumidity(this.value)">
+                    <span class="value-display" id="humidityValue">55 %</span>
+                </div>
+            </div>
+            
+            <div class="current-value">
+                <p><strong>Plage:</strong> 20% - 80%</p>
+                <p><strong>Variation:</strong> ±2% par lecture</p>
+            </div>
+        </div>
+        
+        <!-- Capteur GPS -->
+        <div class="sensor-card">
+            <div class="sensor-header">
+                <div class="sensor-title">
+                    <span class="sensor-icon">📍</span>
+                    Capteur GPS
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="gpsEnabled" checked onchange="toggleSensor('gps', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="control-group">
+                <label>Latitude:</label>
+                <div class="slider-container">
+                    <input type="range" id="latitude" min="-90" max="90" step="0.0001" value="48.8566" oninput="updateGPS()">
+                    <span class="value-display" id="latValue">48.8566°</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Longitude:</label>
+                <div class="slider-container">
+                    <input type="range" id="longitude" min="-180" max="180" step="0.0001" value="2.3522" oninput="updateGPS()">
+                    <span class="value-display" id="lonValue">2.3522°</span>
+                </div>
+            </div>
+            
+            <div class="current-value">
+                <p><strong>Position:</strong> Paris, France</p>
+                <p><strong>Déplacement:</strong> ~11 mètres par lecture</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let simulationRunning = false;
+        
+        // Créer une nouvelle session à chaque chargement de page
+        document.addEventListener('DOMContentLoaded', () => {
+            createNewSession();
+        });
+        
+        function createNewSession() {
+            fetch('/api/session/new', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('sessionId').textContent = data.session_id;
+                    // Recharger les QR codes avec le nouvel ID
+                    document.getElementById('qr-dashboard').src = '/api/qrcode?t=' + Date.now();
+                })
+                .catch(error => {
+                    console.error('Erreur lors de la création de la session:', error);
+                    document.getElementById('sessionId').textContent = 'Erreur';
+                });
+        }
+        
+        function copySessionId() {
+            const sessionId = document.getElementById('sessionId').textContent;
+            navigator.clipboard.writeText(sessionId).then(() => {
+                showNotification('ID de session copié !', 'success');
+            }).catch(err => {
+                showNotification('Erreur lors de la copie', 'error');
+            });
+        }
+        
+        function startSimulation() {
+            fetch('/api/start', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        simulationRunning = true;
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('stopBtn').disabled = false;
+                        document.getElementById('status').className = 'status running';
+                        document.getElementById('status').textContent = '⚡ En cours';
+                        showNotification('Simulation démarrée', 'success');
+                    } else {
+                        showNotification(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Erreur de connexion', 'error');
+                    console.error(error);
+                });
+        }
+        
+        function stopSimulation() {
+            fetch('/api/stop', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        simulationRunning = false;
+                        document.getElementById('startBtn').disabled = false;
+                        document.getElementById('stopBtn').disabled = true;
+                        document.getElementById('status').className = 'status stopped';
+                        document.getElementById('status').textContent = 'Arrêté';
+                        showNotification('Simulation arrêtée', 'info');
+                    }
+                });
+        }
+        
+        function updateInterval(value) {
+            document.getElementById('intervalValue').textContent = parseFloat(value).toFixed(1) + ' s';
+            fetch('/api/update_interval', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ interval: parseFloat(value) })
+            });
+        }
+        
+        function updateTempBase(value) {
+            document.getElementById('baseTempValue').textContent = parseFloat(value).toFixed(1) + ' °C';
+            const noise = parseFloat(document.getElementById('noiseRange').value);
+            const min = (parseFloat(value) - noise).toFixed(1);
+            const max = (parseFloat(value) + noise).toFixed(1);
+            document.getElementById('tempRange').textContent = min + '°C - ' + max + '°C';
+            
+            fetch('/api/update_sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor: 'temperature',
+                    params: { base_temp: parseFloat(value) }
+                })
+            });
+        }
+        
+        function updateTempNoise(value) {
+            document.getElementById('noiseRangeValue').textContent = parseFloat(value).toFixed(1) + ' °C';
+            const base = parseFloat(document.getElementById('baseTemp').value);
+            const min = (base - parseFloat(value)).toFixed(1);
+            const max = (base + parseFloat(value)).toFixed(1);
+            document.getElementById('tempRange').textContent = min + '°C - ' + max + '°C';
+            
+            fetch('/api/update_sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor: 'temperature',
+                    params: { noise_range: parseFloat(value) }
+                })
+            });
+        }
+        
+        function updateHumidity(value) {
+            document.getElementById('humidityValue').textContent = value + ' %';
+            fetch('/api/update_sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor: 'humidity',
+                    params: { initial_humidity: parseFloat(value) }
+                })
+            });
+        }
+        
+        function updateGPS() {
+            const lat = parseFloat(document.getElementById('latitude').value);
+            const lon = parseFloat(document.getElementById('longitude').value);
+            document.getElementById('latValue').textContent = lat.toFixed(4) + '°';
+            document.getElementById('lonValue').textContent = lon.toFixed(4) + '°';
+            
+            fetch('/api/update_sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor: 'gps',
+                    params: { lat: lat, lon: lon }
+                })
+            });
+        }
+        
+        function toggleSensor(sensor, enabled) {
+            fetch('/api/update_sensor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sensor: sensor,
+                    params: { enabled: enabled }
+                })
+            });
+            showNotification(`Capteur ${sensor} ${enabled ? 'activé' : 'désactivé'}`, 'info');
+        }
+        
+        function showNotification(message, type) {
+            // Simple notification (peut être amélioré avec une librairie)
+            const colors = {
+                success: '#38ef7d',
+                error: '#ee0979',
+                info: '#667eea'
+            };
+            
+            const notif = document.createElement('div');
+            notif.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notif.remove(), 300);
+            }, 3000);
+        }
+    </script>
+    
+    <style>
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+    </style>
+</body>
+</html>

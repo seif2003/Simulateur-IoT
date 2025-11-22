@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner - Simulateur IoT</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #09090b;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #fafafa;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #27272a;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #71717a;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: #e7000b;
+            border-bottom-color: #e7000b;
+        }
+        
+        .tab:hover {
+            color: #e4e4e7;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        #reader {
+            width: 100%;
+            border: 1px solid #e7000b;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e4e4e7;
+            font-weight: 500;
+            font-size: 0.875em;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: #09090b;
+            border: 1px solid #3f3f46;
+            border-radius: 8px;
+            font-size: 1em;
+            color: #fafafa;
+            transition: border-color 0.2s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #e7000b;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #e7000b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #c00009;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.875em;
+        }
+        
+        .message.success {
+            background: #16a34a;
+            color: white;
+            border: 1px solid #15803d;
+        }
+        
+        .message.error {
+            background: #dc2626;
+            color: white;
+            border: 1px solid #b91c1c;
+        }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #e7000b;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            color: #ff4d56;
+        }
+        
+        .scanner-status {
+            text-align: center;
+            padding: 10px;
+            color: #a1a1aa;
+            font-size: 0.875em;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Accès au Dashboard</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('scan')">📷 Scanner QR</button>
+            <button class="tab" onclick="switchTab('manual')">⌨️ Saisir ID</button>
+        </div>
+        
+        <div id="scan-tab" class="tab-content active">
+            <div class="scanner-status" id="scanner-status">
+                Préparation du scanner...
+            </div>
+            <div id="reader"></div>
+            <div id="scan-message"></div>
+        </div>
+        
+        <div id="manual-tab" class="tab-content">
+            <form onsubmit="submitSessionId(event)">
+                <div class="input-group">
+                    <label for="session-id">ID de Session</label>
+                    <input 
+                        type="text" 
+                        id="session-id" 
+                        placeholder="Entrez l'ID de session"
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="btn">Accéder au Dashboard</button>
+            </form>
+            <div id="manual-message"></div>
+        </div>
+        
+        <a href="/" class="back-link">← Retour à l'accueil</a>
+    </div>
+    
+    <script>
+        let html5QrcodeScanner = null;
+        
+        function switchTab(tab) {
+            // Mettre à jour les onglets
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'scan') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('scan-tab').classList.add('active');
+                startScanner();
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('manual-tab').classList.add('active');
+                stopScanner();
+            }
+        }
+        
+        function startScanner() {
+            if (html5QrcodeScanner) {
+                return; // Déjà démarré
+            }
+            
+            document.getElementById('scanner-status').textContent = 'Initialisation de la caméra...';
+            
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                },
+                false
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            
+            setTimeout(() => {
+                document.getElementById('scanner-status').textContent = 'Positionnez le QR code devant la caméra';
+            }, 1000);
+        }
+        
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear();
+                html5QrcodeScanner = null;
+            }
+        }
+        
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`QR Code scanné: ${decodedText}`);
+            
+            // Vérifier si c'est une URL valide
+            try {
+                const url = new URL(decodedText);
+                if (url.pathname.includes('/dashboard/')) {
+                    // Rediriger vers le dashboard
+                    showMessage('scan-message', 'QR Code valide ! Redirection...', 'success');
+                    setTimeout(() => {
+                        window.location.href = decodedText;
+                    }, 1000);
+                } else {
+                    showMessage('scan-message', 'QR Code invalide pour ce système', 'error');
+                }
+            } catch (e) {
+                showMessage('scan-message', 'QR Code non reconnu', 'error');
+            }
+        }
+        
+        function onScanFailure(error) {
+            // Ne rien faire, c'est normal pendant le scan
+        }
+        
+        function submitSessionId(event) {
+            event.preventDefault();
+            const sessionId = document.getElementById('session-id').value.trim();
+            
+            if (!sessionId) {
+                showMessage('manual-message', 'Veuillez entrer un ID de session', 'error');
+                return;
+            }
+            
+            // Rediriger vers le dashboard avec l'ID
+            window.location.href = `/dashboard/${sessionId}`;
+        }
+        
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="message ${type}">${message}</div>`;
+            
+            if (type === 'error') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 3000);
+            }
+        }
+        
+        // Démarrer le scanner au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            startScanner();
+        });
+        
+        // Nettoyer le scanner lors de la fermeture
+        window.addEventListener('beforeunload', () => {
+            stopScanner();
+        });
+    </script>
+</body>
+</html>
