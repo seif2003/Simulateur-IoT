@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Create mosquitto config
 RUN mkdir -p /mosquitto/config
-COPY mosquitto.conf /mosquitto/config/mosquitto.conf
+COPY /mosquitto/config/mosquitto.conf /mosquitto/config/mosquitto.conf
 
 # Install Python dependencies
 WORKDIR /app
