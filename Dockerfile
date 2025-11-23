@@ -1,32 +1,29 @@
-# Use Python 3.11 slim image
 FROM python:3.11-slim
 
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
+# Install mosquitto + supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    mosquitto \
+    mosquitto-clients \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Create mosquitto config
+RUN mkdir -p /mosquitto/config
+COPY mosquitto.conf /mosquitto/config/mosquitto.conf
 
 # Install Python dependencies
+WORKDIR /app
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY app.py .
-COPY sensors.py .
-COPY mqtt_client.py .
-COPY templates/ ./templates/
+# Copy app files
+COPY . .
 
-# Expose Flask port
-EXPOSE 5000
+# Expose ports
+EXPOSE 5000 1883 9001
 
-# Set environment variables
-ENV FLASK_APP=app.py
-ENV PYTHONUNBUFFERED=1
+# Copy supervisor config
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Run the application
-CMD ["python", "app.py"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
