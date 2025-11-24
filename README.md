@@ -33,7 +33,7 @@ Ce projet est un **simulateur de capteurs IoT** complet qui reproduit le comport
 docker-compose up -d mosquitto
 
 # Lancer l'interface web
-python app.py
+python main.py
 ```
 
 Accédez à `http://localhost:5000` pour contrôler les capteurs en temps réel ! 🚀
@@ -118,7 +118,7 @@ Développer un simulateur de capteurs IoT capable de :
 └───────────────────────────┬─────────────────────────────────┘
                             │
                 ┌───────────▼───────────┐
-                │   app.py (Flask)      │
+                │   main.py (Flask)      │
                 │   - Routes API        │
                 │   - WebSocket server  │
                 │   - Gestion sessions  │
@@ -254,7 +254,7 @@ mosquitto_sub -h localhost -t test/#
 #### 1. Lancer l'interface web
 
 ```bash
-python app.py
+python main.py
 ```
 
 L'application démarre sur `http://localhost:5000`
@@ -286,7 +286,7 @@ export BROKER_PORT=1883
 export HOST=0.0.0.0
 export PORT=5000
 
-python app.py
+python main.py
 ```
 
 ### Utilisation avancée
@@ -329,7 +329,7 @@ curl -X POST http://localhost:5000/api/update_sensor \
 
 ```
 proj-ds/
-├── app.py                      # ⭐ Application Flask principale
+├── main.py                      # ⭐ Application Flask principale
 │   ├── Routes API REST
 │   ├── Gestion WebSocket
 │   ├── Contrôle simulation
@@ -400,7 +400,7 @@ client.publish(topic="iot/sensor/temp", data=sensor_data, qos=1)
 client.disconnect()
 ```
 
-#### `app.py` - Interface Web
+#### `main.py` - Interface Web
 
 ```python
 # API REST + WebSocket + Dashboard
@@ -549,7 +549,7 @@ Modifie l'intervalle de publication (0.1s - 60s).
 
 | Exigence | Statut | Implémentation |
 |----------|--------|----------------|
-| Architecture modulaire (3+ modules) | ✅ | `sensors.py`, `mqtt_client.py`, `app.py` |
+| Architecture modulaire (3+ modules) | ✅ | `sensors.py`, `mqtt_client.py`, `main.py` |
 | POO pour les capteurs | ✅ | Classes `TemperatureSensor`, `HumiditySensor`, `GPSSensor` |
 | Format JSON | ✅ | Sérialisation JSON pour tous les messages |
 | Connexion MQTT avec `paho-mqtt` | ✅ | Module `mqtt_client.py` |
@@ -641,7 +641,7 @@ netstat -ano | findstr :5000
 
 # Arrêter le processus ou changer le port
 $env:PORT=5001
-python app.py
+python main.py
 ```
 
 #### ❌ Les graphiques ne s'affichent pas
@@ -676,7 +676,7 @@ curl -X POST http://localhost:5000/api/update_sensor \
 #### Activer le mode debug Flask
 
 ```bash
-# Dans app.py, modifier la dernière ligne :
+# Dans main.py, modifier la dernière ligne :
 socketio.run(app, host=host, port=port, debug=True)
 ```
 
@@ -687,7 +687,7 @@ socketio.run(app, host=host, port=port, debug=True)
 docker-compose logs -f mosquitto
 
 # Logs de l'application
-# Visibles directement dans le terminal où app.py est lancé
+# Visibles directement dans le terminal où main.py est lancé
 ```
 
 #### Tester la connexion MQTT manuellement
