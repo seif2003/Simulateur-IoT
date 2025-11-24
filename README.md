@@ -28,11 +28,24 @@ Ce projet est un **simulateur de capteurs IoT** complet qui reproduit le comport
 
 ### Démonstration rapide
 
-```bash
-# Démarrer le broker MQTT
-docker-compose up -d mosquitto
+**Option 1 : Avec Docker (Tout-en-un - Recommandé)**
 
-# Lancer l'interface web
+```bash
+# Construire et lancer le conteneur (Mosquitto + Flask)
+docker build -t iot-simulator .
+docker run -d -p 5000:5000 -p 1883:1883 -p 9001:9001 --name iot-simulator iot-simulator
+
+# Accéder à l'interface
+# http://localhost:5000
+```
+
+**Option 2 : Sans Docker (Installation locale)**
+
+```bash
+# Démarrer Mosquitto localement
+mosquitto -v
+
+# Dans un autre terminal, lancer l'application
 python main.py
 ```
 
@@ -162,29 +175,95 @@ Développer un simulateur de capteurs IoT capable de :
 
 ### Logiciels requis
 
+**Option A : Avec Docker (Recommandé)**
+- **Docker** uniquement
+- **Navigateur web** moderne (Chrome, Firefox, Edge)
+
+**Option B : Sans Docker (Installation locale)**
 - **Python** 3.8 ou supérieur
-- **Docker** et **Docker Compose** (recommandé pour le broker MQTT)
+- **Mosquitto MQTT Broker**
 - **Navigateur web** moderne (Chrome, Firefox, Edge)
 
 ### Connaissances recommandées
 
 - Python orienté objet (POO)
 - Protocole MQTT
-- Flask et WebSocket
-- Docker (optionnel)
+## 📦 Installation
+
+### Option A : Avec Docker (Recommandé - Tout-en-un)
+
+Le Dockerfile contient **tout** : Mosquitto MQTT Broker + Flask App + Supervisor.
+
+#### 1. Cloner le projet
+
+```bash
+git clone https://github.com/seif2003/Simulateur-IoT.git
+cd Simulateur-IoT
+```
+
+#### 2. Construire l'image Docker
+
+```bash
+docker build -t iot-simulator .
+```
+
+#### 3. Lancer le conteneur
+
+```bash
+docker run -d \
+  -p 5000:5000 \
+  -p 1883:1883 \
+  -p 9001:9001 \
+  --name iot-simulator \
+  iot-simulator
+```
+
+**Ports exposés :**
+- `5000` : Interface web Flask
+- `1883` : MQTT Broker
+- `9001` : MQTT WebSocket
+
+#### 4. Vérifier que tout fonctionne
+
+```bash
+# Voir les logs
+docker logs -f iot-simulator
+
+# Vérifier l'état
+docker ps
+
+# Accéder à l'interface web
+# http://localhost:5000
+```
+
+#### 5. Commandes utiles
+
+```bash
+# Arrêter le conteneur
+docker stop iot-simulator
+
+# Redémarrer
+docker start iot-simulator
+
+# Supprimer
+docker rm -f iot-simulator
+
+# Reconstruire après modifications
+docker build -t iot-simulator . && docker run -d -p 5000:5000 -p 1883:1883 -p 9001:9001 --name iot-simulator iot-simulator
+```
 
 ---
 
-## 📦 Installation
+### Option B : Installation locale (Sans Docker)
 
-### 1. Cloner le projet
+#### 1. Cloner le projet
 
 ```bash
-git clone <repository-url>
-cd proj-ds
+git clone https://github.com/seif2003/Simulateur-IoT.git
+cd Simulateur-IoT
 ```
 
-### 2. Créer un environnement virtuel
+#### 2. Créer un environnement virtuel
 
 ```bash
 # Windows PowerShell
@@ -196,31 +275,28 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Installer les dépendances
+#### 3. Installer les dépendances Python
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Démarrer le broker MQTT
-
-#### Option A : Avec Docker (recommandé)
-
-```bash
-docker-compose up -d mosquitto
-```
-
-#### Option B : Installation locale
+#### 4. Installer et démarrer Mosquitto MQTT Broker
 
 **Windows :**
 ```powershell
 # Télécharger depuis https://mosquitto.org/download/
 # Installer et démarrer le service
 net start mosquitto
+
+# Ou lancer manuellement
+cd "C:\Program Files\mosquitto"
+.\mosquitto.exe -v
 ```
 
 **Linux (Ubuntu/Debian) :**
 ```bash
+sudo apt-get update
 sudo apt-get install mosquitto mosquitto-clients
 sudo systemctl start mosquitto
 sudo systemctl enable mosquitto
@@ -232,26 +308,74 @@ brew install mosquitto
 brew services start mosquitto
 ```
 
-### 5. Vérifier l'installation
+#### 5. Vérifier l'installation
 
 ```bash
-# Vérifier que Python est installé
+# Vérifier Python
 python --version
 
 # Vérifier les dépendances
 pip list
 
-# Tester la connexion MQTT
+# Tester Mosquitto (dans un terminal séparé)
 mosquitto_sub -h localhost -t test/#
+
+# Tester la publication
+mosquitto_pub -h localhost -t test/topic -m "Hello MQTT"
 ```
 
 ---
 
 ## 🚀 Utilisation
 
-### Démarrage rapide
+### Option A : Avec Docker
 
-#### 1. Lancer l'interface web
+#### 1. Lancer le conteneur (si pas déjà fait)
+
+```bash
+docker run -d -p 5000:5000 -p 1883:1883 -p 9001:9001 --name iot-simulator iot-simulator
+```
+
+#### 2. Accéder à l'interface web
+
+- **Page d'accueil** : `http://localhost:5000/`
+- **Panneau de contrôle** : `http://localhost:5000/control`
+- **Dashboard** : `http://localhost:5000/dashboard`
+- **Scanner QR** : `http://localhost:5000/scanner`
+
+#### 3. Commandes Docker utiles
+
+```bash
+# Voir les logs en temps réel
+docker logs -f iot-simulator
+
+# Entrer dans le conteneur
+docker exec -it iot-simulator bash
+
+# Redémarrer le conteneur
+docker restart iot-simulator
+
+# Arrêter et supprimer
+docker stop iot-simulator
+docker rm iot-simulator
+```
+
+---
+
+### Option B : Sans Docker (Installation locale)
+
+#### 1. Démarrer Mosquitto (terminal 1)
+
+```bash
+# Windows
+cd "C:\Program Files\mosquitto"
+.\mosquitto.exe -v
+
+# Linux/Mac
+mosquitto -v
+```
+
+#### 2. Lancer l'application Flask (terminal 2)
 
 ```bash
 python main.py
@@ -259,11 +383,16 @@ python main.py
 
 L'application démarre sur `http://localhost:5000`
 
-#### 2. Accéder à l'interface
+#### 3. Accéder à l'interface
 
 - **Page d'accueil** : `http://localhost:5000/`
 - **Panneau de contrôle** : `http://localhost:5000/control`
 - **Dashboard** : `http://localhost:5000/dashboard`
+- **Scanner QR** : `http://localhost:5000/scanner`
+
+---
+
+### Démarrage rapide (Les deux options)
 - **Scanner QR** : `http://localhost:5000/scanner`
 
 ### Configuration des capteurs
